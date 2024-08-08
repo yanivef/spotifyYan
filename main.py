@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, g
 from tools import handle_login, handle_user_exists, handle_user_submit, SECRET_KEY, get_user_full_name
 from spotify import get_playlists, tracks_in_playlists
 from functools import wraps
@@ -15,6 +15,9 @@ def login_req(func):
         if 'logged_in' not in session:
             flash('You need to be logged in', 'danger')
             return redirect(url_for('login'))
+        if 'tracks' not in session:
+            session['tracks'] = tracks_in_playlists()
+        g.tracks = session['tracks']
         return func(*args, **kwargs)
     return dec_func
 
@@ -27,8 +30,9 @@ def index():
 @app.route('/home')
 @login_req
 def home():
-    tracks = [tracks_in_playlists()]
-    return render_template('home.html', playlists=get_playlists(), tracks=tracks)
+    tracks = [g.tracks]
+    playlists = get_playlists()
+    return render_template('home.html', playlists=playlists, tracks=tracks)
 
 
 @app.route('/login', methods=['GET', 'POST'])

@@ -14,10 +14,8 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_secret=CLIENT_SECRET,
                                                scope=SCOPE))
 
 
-playlists = sp.current_user_playlists()
-
-
 def get_playlists():
+    playlists = sp.current_user_playlists()
     playlists_dict = {}     # KEY -> playlist id,     VALUE -> playlist name
     for playlist in playlists['items']:
         if playlist['id'] not in playlists_dict:
