@@ -24,6 +24,7 @@ def login_req(func):
 
 @app.route('/')
 def index():
+    session.clear()    # clears session when reopening app
     return render_template('index.html')
 
 
