@@ -5,13 +5,19 @@
     <h1>Home Page</h1>
     <p>Welcome, {{ session['full_name'] }}!</p>
     <ul>
-        {% for playlist_id, playlist_name in playlists.items() %}
+        {% if not playlists %}
             <div>
-                <li>
-                    <button id="{{ playlist_id }}" >{{ playlist_name }}</button>
-                </li>
+                <p>User has no playlists</p>
             </div>
-        {% endfor %}
+        {% else %}
+            {% for playlist_id, playlist_name in playlists.items() %}
+                <div>
+                    <li>
+                        <button id="{{ playlist_id }}" >{{ playlist_name }}</button>
+                    </li>
+                </div>
+            {% endfor %}
+        {% endif %}
     </ul>
 
 </div>

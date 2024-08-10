@@ -17,7 +17,7 @@ def login_req(func):
             return redirect(url_for('login'))
         if 'tracks' not in session:
             session['tracks'] = tracks_in_playlists()
-        g.tracks = session['tracks']
+        g.tracks = session['tracks']    # g -> flask help to store data within functions
         return func(*args, **kwargs)
     return dec_func
 
@@ -30,7 +30,7 @@ def index():
 @app.route('/home')
 @login_req
 def home():
-    tracks = [g.tracks]
+    tracks = [g.tracks]     # pass tracks as JS obj
     playlists = get_playlists()
     return render_template('home.html', playlists=playlists, tracks=tracks)
 

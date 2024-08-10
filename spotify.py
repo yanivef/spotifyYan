@@ -15,7 +15,11 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_secret=CLIENT_SECRET,
 
 
 def get_playlists():
-    playlists = sp.current_user_playlists()
+    playlists = sp.current_user_playlists(limit=20)     # limit - 20, gets up to 20 playlists
+    # playlists['items'] = []       # check case for user without playlists
+    if not playlists['items']:      # if user has no playlists -> playlists['items'] is empty list
+        return []
+
     playlists_dict = {}     # KEY -> playlist id,     VALUE -> playlist name
     for playlist in playlists['items']:
         if playlist['id'] not in playlists_dict:
@@ -33,6 +37,8 @@ def get_tracks_in_playlist(playlist_id):
 
 def tracks_in_playlists():
     playlists_dict = get_playlists()
+    if not playlists_dict:      # the return value from get_playlists() was empty list
+        return
     dict_of_tracks = {}     # KEY -> playlist id,   VALUE -> playlist tracks (as list)
     for playlist_id in playlists_dict.keys():
         dict_of_tracks[playlist_id] = get_tracks_in_playlist(playlist_id)
