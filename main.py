@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g
-from tools import handle_login, handle_user_exists, handle_user_submit, SECRET_KEY, get_user_full_name
+from tools import handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure
 from spotify import get_playlists, tracks_in_playlists
 from functools import wraps
+import os
 import hashlib
 
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = os.getenv('SECRET_KEY')
 
 
 def login_req(func):
@@ -88,4 +89,5 @@ def logout():
 
 
 if __name__ == '__main__':
+    configure()     # load env
     app.run(debug=True)

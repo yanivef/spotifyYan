@@ -1,14 +1,13 @@
 import psycopg2 as ps
-import hashlib
+import os
+from tools import configure
 
-DB_NAME = 'postgres'
-DB_HOST = 'localhost'
-DB_USER = 'postgres'
-DB_PASS = '1107413a'
-DB_PORT = 5432
+configure()  # load env
 
 try:
-    conn = ps.connect(dbname=DB_NAME, host=DB_HOST, user=DB_USER, password=DB_PASS, port=DB_PORT)
+    conn = ps.connect(dbname=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'),
+                      password=os.getenv('DB_PASS'), port=os.getenv('DB_PORT'))
+
     cur = conn.cursor()
 
     cur.execute("""

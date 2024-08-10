@@ -34,6 +34,7 @@
             <a class="nav-item nav-link" id="home" href="/home">Home</a>
             <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
             <a class="nav-item nav-link">{{ session['full_name'] }}</a>
+
           {% else %}
             <a class="nav-item nav-link" id="login" href="/login">Login</a>
             <a class="nav-item nav-link" id="register" href="/register">Register</a>

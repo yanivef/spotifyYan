@@ -1,17 +1,16 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
+import os
+from tools import configure
 
-CLIENT_ID = '5627cc5063364eb999c84a473cbf23be'
-CLIENT_SECRET = 'd6b78ff455b34433a30a4337b52edb0c'
-REDIRECT_URI = 'http://localhost:3000'
-SCOPE = 'user-library-read playlist-read-private'
+configure()  # load env
 
-
-client_credentials_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_secret=CLIENT_SECRET,
-                                               client_id=CLIENT_ID,
-                                               redirect_uri=REDIRECT_URI,
-                                               scope=SCOPE))
+client_credentials_manager = SpotifyClientCredentials(client_id=os.getenv('CLIENT_ID'),
+                                                      client_secret=os.getenv('CLIENT_SECRET'))
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_secret=os.getenv('CLIENT_SECRET'),
+                                               client_id=os.getenv('CLIENT_ID'),
+                                               redirect_uri=os.getenv('REDIRECT_URI'),
+                                               scope=os.getenv('SCOPE')))
 
 
 def get_playlists():

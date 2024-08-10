@@ -1,14 +1,22 @@
 import psycopg2 as ps
-from db import DB_HOST, DB_PASS, DB_PORT, DB_USER, DB_NAME
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = 'blabla'
+
+# load env
+def configure():
+    load_dotenv()
+
+configure()
+
+
 EMAIL_PASSWORD_QUERY = """ SELECT email, password FROM users WHERE email = %s AND password = %s """
 EMAIL_QUERY =""" SELECT email FROM users WHERE email = %s """
 NAME_QUERY =""" SELECT fname, lname FROM users WHERE email = %s """
 
 INSERT_USER_QUERY = """INSERT INTO users VALUES(%s, %s, %s, %s)"""
 
-conn = ps.connect(dbname=DB_NAME, host=DB_HOST, user=DB_USER, password=DB_PASS, port=DB_PORT)
+conn = ps.connect(dbname=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'), port=os.getenv('DB_PORT'))
 
 cur = conn.cursor()
 
@@ -39,7 +47,10 @@ def handle_user_submit(fname, lname, email, password):
 def get_user_full_name(email):
     cur.execute(NAME_QUERY, (email,))
     conn.commit()
-    
+
     lst = [*cur.fetchone()]
     return lst[0] + ' ' + lst[1]
+
+
+
 
