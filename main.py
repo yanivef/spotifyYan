@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g
 from tools import handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure
-from spotify import get_playlists, tracks_in_playlists
+from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spotify, get_access_token, create_sp
 from functools import wraps
 import os
 import hashlib
@@ -16,9 +16,14 @@ def login_req(func):
         if 'logged_in' not in session:
             flash('You need to be logged in', 'danger')
             return redirect(url_for('login'))
-        if 'tracks' not in session:
-            session['tracks'] = tracks_in_playlists()
-        g.tracks = session['tracks']    # g -> flask help to store data within functions
+
+        if 'access_token' in session:
+            access_token = session['access_token']
+            sp = create_sp(access_token)        # creates spotify obj for user base on his access token
+
+            if 'tracks' not in session:
+                session['tracks'] = tracks_in_playlists(sp)
+            g.tracks = session['tracks']        # g -> flask help to store data within functions
         return func(*args, **kwargs)
     return dec_func
 
@@ -32,8 +37,10 @@ def index():
 @app.route('/home')
 @login_req
 def home():
+    access_token = session['access_token']
+    sp = create_sp(access_token)
     tracks = [g.tracks]     # pass tracks as JS obj
-    playlists = get_playlists()
+    playlists = get_playlists(sp)
     return render_template('home.html', playlists=playlists, tracks=tracks)
 
 
@@ -50,8 +57,8 @@ def login():
             session['logged_in'] = True
             session['email'] = email
             session['full_name'] = get_user_full_name(email)
-            # flash('Logged In Successfully!', 'success')
-            return redirect(url_for('home'))
+            url_spotify_login = generate_redirect_to_spotify()      # gets url to redirect user in order to get scope permissions
+            return redirect(url_spotify_login)                      # redirects user to the spotify login url
         else:
             flash('Invalid credentials!', 'danger')
 
@@ -87,6 +94,15 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+
+# spotify will send response to callback route -> base on the route set in the developer dashboard on spotify website
+@app.route('/callback')
+def callback():
+    code = request.args.get('code')             # get the code from the spotify response
+    access_token = get_access_token(code)       # convert code to access token
+    session['access_token'] = access_token      # store access token in session
+
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     configure()     # load env
