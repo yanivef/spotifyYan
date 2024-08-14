@@ -19,6 +19,17 @@ try:
         );
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS playlists (
+                    playlist_id VARCHAR(255),
+                    user_email VARCHAR(255),
+                    playlist_name VARCHAR(255) NOT NULL,
+                    
+                    FOREIGN KEY (user_email) REFERENCES users(email),
+                    PRIMARY KEY (user_email, playlist_id)
+        );
+    """)
+
     conn.commit()
 
 except Exception as e:
