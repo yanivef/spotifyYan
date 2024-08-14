@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g
-from tools import handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from tools import (handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure,
+                   update_user_playlists)
 from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spotify, get_access_token, create_sp
 from functools import wraps
 import os
@@ -21,9 +22,13 @@ def login_req(func):
             access_token = session['access_token']
             sp = create_sp(access_token)        # creates spotify obj for user base on his access token
 
+            # update user's playlists on every log
+            user_email = session['email']
+            playlists = get_playlists(sp)                   # current updated playlists
+            update_user_playlists(playlists, user_email)    # update DB playlists
+
             if 'tracks' not in session:
                 session['tracks'] = tracks_in_playlists(sp)
-            g.tracks = session['tracks']        # g -> flask help to store data within functions
         return func(*args, **kwargs)
     return dec_func
 
@@ -39,7 +44,7 @@ def index():
 def home():
     access_token = session['access_token']
     sp = create_sp(access_token)
-    tracks = [g.tracks]     # pass tracks as JS obj
+    tracks = [session['tracks']]
     playlists = get_playlists(sp)
     return render_template('home.html', playlists=playlists, tracks=tracks)
 
