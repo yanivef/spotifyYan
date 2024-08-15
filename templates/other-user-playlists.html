@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} {{ other_user_fullname }}'s Playlists {% endblock %}
+{% block content %}
+    {% if not other_user_playlists %}
+          <div>
+            <p>{{ other_user_fullname }} has no playlists.</p>
+        </div>
+    {% else %}
+            <p>{{ other_user_fullname }} playlists: </p>
+
+            <ul>
+            {% for playlist_id, playlist_name in other_user_playlists.items() %}
+                <div>
+                    <li class="p-1 m-1">
+                        <button id="{{ playlist_id }}" >{{ playlist_name }}</button>
+                    </li>
+                </div>
+            {% endfor %}
+            </ul>
+    {% endif %}
+
+{% endblock %}
