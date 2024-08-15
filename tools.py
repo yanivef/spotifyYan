@@ -12,9 +12,10 @@ configure()
 
 EMAIL_PASSWORD_QUERY = """ SELECT email, password FROM users WHERE email = %s AND password = %s """
 EMAIL_QUERY = """ SELECT email FROM users WHERE email = %s """
-NAME_QUERY = """ SELECT fname, lname FROM users WHERE email = %s """
+NAME_QUERY = """ SELECT fname || ' ' || lname FROM users WHERE email = %s """
 GET_USER_PLAYLISTS_QUERY = """ SELECT playlist_id, playlist_name FROM playlists WHERE user_email = %s """
-CHECK_PLAYLIST_EXIST_QUERY = """ SELECT * FROM playlists WHERE playlist_id = %s AND user_email = %s """
+# CHECK_PLAYLIST_EXIST_QUERY = """ SELECT * FROM playlists WHERE playlist_id = %s AND user_email = %s """
+GET_OTHER_USERS_QUERY = """ SELECT email, fname || ' ' || lname FROM users WHERE email != %s """
 
 INSERT_USER_QUERY = """ INSERT INTO users VALUES(%s, %s, %s, %s)"""
 INSERT_USER_PLAYLIST_QUERY = """ INSERT INTO playlists VALUES(%s, %s, %s) """
@@ -52,11 +53,16 @@ def handle_user_submit(fname, lname, email, password):
 
 
 def get_user_full_name(email):
-    cur.execute(NAME_QUERY, (email,))
-    conn.commit()
+    try:
+        cur.execute(NAME_QUERY, (email,))
+        conn.commit()
 
-    lst = [*cur.fetchone()]
-    return lst[0] + ' ' + lst[1]
+        full_name = cur.fetchone()[0]
+
+        return full_name
+
+    except Exception as e:
+        print(f'Cannot fetch user full name, error: {e}')
 
 
 def insert_user_playlists(playlist_id, user_email, playlist_name):
@@ -118,3 +124,28 @@ def update_user_playlists(playlists, user_email):
     for playlist_id, playlist_name in playlists_db.items():
         if playlist_id not in playlists.keys():
             remove_playlist(playlist_id, user_email)
+
+
+# get all other users -> all users except current user
+def get_other_users(user_email):
+    try:
+        cur.execute(GET_OTHER_USERS_QUERY, (user_email, ))
+        conn.commit()
+
+        lst = [*cur.fetchall()]
+
+        # if there are any other users
+        if lst:
+            user_details = {}       # KEY -> user email,    VALUE -> user full name
+            for details in lst:
+                email = details[0]
+                full_name = details[1]
+                if details[0] not in user_details:
+                    user_details[email] = full_name
+
+            return user_details
+
+        return None
+
+    except Exception as e:
+        print(f'Cant fetch other users, error: {e}')
