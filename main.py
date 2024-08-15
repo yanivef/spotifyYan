@@ -152,3 +152,4 @@ def callback():
 if __name__ == '__main__':
     configure()     # load env
     app.run(debug=True)
+    print('hey')
