@@ -13,15 +13,16 @@ configure()
 EMAIL_PASSWORD_QUERY = """ SELECT email, password FROM users WHERE email = %s AND password = %s """
 EMAIL_QUERY = """ SELECT email FROM users WHERE email = %s """
 NAME_QUERY = """ SELECT fname || ' ' || lname FROM users WHERE email = %s """
-GET_USER_PLAYLISTS_QUERY = """ SELECT playlist_id, playlist_name FROM playlists WHERE user_email = %s """
-# CHECK_PLAYLIST_EXIST_QUERY = """ SELECT * FROM playlists WHERE playlist_id = %s AND user_email = %s """
-GET_OTHER_USERS_QUERY = """ SELECT email, fname || ' ' || lname FROM users WHERE email != %s """
+GET_ID_QUERY = """ SELECT user_id FROM users WHERE email = %s """
+GET_USER_PLAYLISTS_QUERY = """ SELECT playlist_id, playlist_name FROM playlists WHERE user_id = %s """
+GET_OTHER_USERS_QUERY = """ SELECT user_id, fname || ' ' || lname FROM users WHERE user_id != %s """
 
-INSERT_USER_QUERY = """ INSERT INTO users VALUES(%s, %s, %s, %s)"""
+INSERT_USER_QUERY = """ INSERT INTO users (email, fname, lname, password) VALUES(%s, %s, %s, %s)"""
 INSERT_USER_PLAYLIST_QUERY = """ INSERT INTO playlists VALUES(%s, %s, %s) """
 
-REMOVE_PLAYLIST_QUERY = """ DELETE FROM playlists WHERE playlist_id = %s AND user_email = %s """
-CLEAR_USER_PLAYLISTS_QUERY = """ DELETE FROM playlists WHERE user_email = %s """
+REMOVE_PLAYLIST_QUERY = """ DELETE FROM playlists WHERE playlist_id = %s AND user_id = %s """
+
+CLEAR_USER_PLAYLISTS_QUERY = """ DELETE FROM playlists WHERE user_id = %s """
 
 
 conn = ps.connect(dbname=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'), port=os.getenv('DB_PORT'))
@@ -39,12 +40,16 @@ def handle_login(email, password):
 
 
 def handle_user_exists(email):
-    cur.execute(EMAIL_QUERY, (email,))
-    conn.commit()
-    if cur.fetchall():
-        return True     # user already exists
+    try:
+        cur.execute(EMAIL_QUERY, (email,))
+        conn.commit()
+        if cur.fetchall():
+            return True     # user already exists
 
-    return False        # user doesnt exists
+        return False        # user doesnt exists
+
+    except Exception as e:
+        print(f'Something went wrong, error: {e}')
 
 
 def handle_user_submit(fname, lname, email, password):
@@ -65,18 +70,30 @@ def get_user_full_name(email):
         print(f'Cannot fetch user full name, error: {e}')
 
 
-def insert_user_playlists(playlist_id, user_email, playlist_name):
+def get_user_id(email):
     try:
-        cur.execute(INSERT_USER_PLAYLIST_QUERY, (playlist_id, user_email, playlist_name))
+        cur.execute(GET_ID_QUERY, (email, ))
+        conn.commit()
+
+        user_id = cur.fetchone()[0]
+        return user_id
+
+    except Exception as e:
+        print(f'Cannot fetch user id, error: {e}')
+
+
+def insert_user_playlists(playlist_id, user_id, playlist_name):
+    try:
+        cur.execute(INSERT_USER_PLAYLIST_QUERY, (playlist_id, user_id, playlist_name))
         conn.commit()
 
     except Exception as e:
         print(f'User playlist insertion failed, error: {e}')
 
 
-def get_user_db_playlists(user_email):
+def get_user_db_playlists(user_id):
     try:
-        cur.execute(GET_USER_PLAYLISTS_QUERY, (user_email, ))
+        cur.execute(GET_USER_PLAYLISTS_QUERY, (user_id, ))
         conn.commit()
 
         playlists = cur.fetchall()
@@ -96,52 +113,52 @@ def get_user_db_playlists(user_email):
         print(f"Cant generate user's playlist, error: {e}")
 
 
-def remove_playlist(playlist_id, user_email):
-    cur.execute(REMOVE_PLAYLIST_QUERY, (playlist_id, user_email))
+def remove_playlist(playlist_id, user_id):
+    cur.execute(REMOVE_PLAYLIST_QUERY, (playlist_id, user_id))
     conn.commit()
 
 
-def update_user_playlists(playlists, user_email):
-    playlists_db = get_user_db_playlists(user_email)
+def update_user_playlists(playlists, user_id):
+    playlists_db = get_user_db_playlists(user_id)
 
     # clear DB if user has no playlists
     if not playlists:
-        cur.execute(CLEAR_USER_PLAYLISTS_QUERY, (user_email, ))
+        cur.execute(CLEAR_USER_PLAYLISTS_QUERY, (user_id, ))
         conn.commit()
         return
     # if DB is empty -> add all playlists from spotify profile
     if not playlists_db:
         for playlist_id, playlist_name in playlists.items():
-            insert_user_playlists(playlist_id, user_email, playlist_name)
+            insert_user_playlists(playlist_id, user_id, playlist_name)
         return
 
     # insert new playlists to DB
     for playlist_id, playlist_name in playlists.items():
         if playlist_id not in playlists_db.keys():
-            insert_user_playlists(playlist_id, user_email, playlist_name)
+            insert_user_playlists(playlist_id, user_id, playlist_name)
 
     # remove playlists from DB if they removed from updated spotify user profile
     for playlist_id, playlist_name in playlists_db.items():
         if playlist_id not in playlists.keys():
-            remove_playlist(playlist_id, user_email)
+            remove_playlist(playlist_id, user_id)
 
 
 # get all other users -> all users except current user
-def get_other_users(user_email):
+def get_other_users(user_id):
     try:
-        cur.execute(GET_OTHER_USERS_QUERY, (user_email, ))
+        cur.execute(GET_OTHER_USERS_QUERY, (user_id, ))
         conn.commit()
 
         lst = [*cur.fetchall()]
 
         # if there are any other users
         if lst:
-            user_details = {}       # KEY -> user email,    VALUE -> user full name
+            user_details = {}       # KEY -> user id,    VALUE -> user full name
             for details in lst:
-                email = details[0]
+                user__id = details[0]
                 full_name = details[1]
-                if details[0] not in user_details:
-                    user_details[email] = full_name
+                if user__id not in user_details:
+                    user_details[user__id] = full_name
 
             return user_details
 

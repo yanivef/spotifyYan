@@ -12,7 +12,8 @@ try:
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-                    email VARCHAR(255) PRIMARY KEY,
+                    user_id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
                     fname VARCHAR(255) NOT NULL,
                     lname VARCHAR(255) NOT NULL,
                     password VARCHAR(255) NOT NULL
@@ -22,11 +23,11 @@ try:
     cur.execute("""
         CREATE TABLE IF NOT EXISTS playlists (
                     playlist_id VARCHAR(255),
-                    user_email VARCHAR(255),
+                    user_id INT,
                     playlist_name VARCHAR(255) NOT NULL,
                     
-                    FOREIGN KEY (user_email) REFERENCES users(email),
-                    PRIMARY KEY (user_email, playlist_id)
+                    FOREIGN KEY (user_id) REFERENCES users(user_id),
+                    PRIMARY KEY (user_id, playlist_id)
         );
     """)
 

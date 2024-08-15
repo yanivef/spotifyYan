@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from tools import (handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure,
-                   update_user_playlists, get_other_users, get_user_db_playlists)
+                   update_user_playlists, get_other_users, get_user_db_playlists, get_user_id)
 from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spotify, get_access_token, create_sp
 from functools import wraps
 import os
@@ -14,7 +14,7 @@ app.secret_key = os.getenv('SECRET_KEY')
 def login_req(func):
     @wraps(func)
     def dec_func(*args, **kwargs):
-        if 'logged_in' not in session or 'email' not in session or 'full_name' not in session:
+        if 'logged_in' not in session or 'email' not in session or 'full_name' not in session or 'user_id' not in session:
             flash('You need to be logged in', 'danger')
             return redirect(url_for('login'))
 
@@ -24,10 +24,10 @@ def login_req(func):
             sp = create_sp(access_token)        # creates spotify obj for user base on his access token
             session['sp_created'] = True        # stores in session True if sp obj created
 
-            # update user's playlists on every log
-            user_email = session['email']
+            # update user's playlists on every login
+            user_id = session['user_id']
             playlists = get_playlists(sp)                   # current updated playlists
-            update_user_playlists(playlists, user_email)    # update DB playlists
+            update_user_playlists(playlists, user_id)    # update DB playlists
 
             if 'tracks' not in session:
                 session['tracks'] = tracks_in_playlists(sp)
@@ -64,6 +64,8 @@ def login():
             session['logged_in'] = True
             session['email'] = email
             session['full_name'] = get_user_full_name(email)
+            session['user_id'] = get_user_id(email)
+
             url_spotify_login = generate_redirect_to_spotify()      # gets url to redirect user in order to get scope permissions
             return redirect(url_spotify_login)                      # redirects user to the spotify login url
         else:
@@ -85,6 +87,8 @@ def register():
         is_exist = handle_user_exists(email)        # check if user already exists
         if is_exist:
             flash('Email is already taken!', 'danger')
+            return render_template('register.html')
+
         else:
             # USER DOESNT EXIST, SUBMIT HIM TO DB
             handle_user_submit(fname, lname, email, password)
@@ -92,8 +96,9 @@ def register():
             session['logged_in'] = True
             session['email'] = email
             session['full_name'] = f'{fname} {lname}'
+            session['user_id'] = get_user_id(email)
 
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
 
 
 @app.route('/logout')
@@ -106,9 +111,8 @@ def logout():
 @app.route('/other-playlists')
 @login_req
 def other_playlists():
-    user_email = session['email']               # there is a check for 'email' in session in the 'login_req' decorator
-    users_details = get_other_users(user_email)
-
+    user_id = session['user_id']        # there is a check for 'user_id' in session in the 'login_req' decorator
+    users_details = get_other_users(user_id)
     return render_template('other-playlists.html', users_details=users_details)
 
 
@@ -117,10 +121,10 @@ def other_playlists():
 @login_req
 def generate_other_pl():
     if request.method == 'POST':
-        other_user_email, other_user_fullname = next(iter(request.form.items()))     # get the email, full name. no need to use for loop,
-                                                                                     # there is only one item
-        session['other_user_email'] = other_user_email
+        other_user_id, other_user_fullname = next(iter(request.form.items()))   # get the id, full name. no need to use FOR loop,
+                                                                                # there is only one item
         session['other_user_fullname'] = other_user_fullname
+        session['other_user_id'] = other_user_id
 
         return redirect(url_for('other_user_pl'))
 
@@ -131,12 +135,12 @@ def generate_other_pl():
 @app.route('/other-user-pl', methods=['GET', 'POST'])
 @login_req
 def other_user_pl():
-    if 'other_user_fullname' not in session or 'other_user_email' not in session:
+    if 'other_user_fullname' not in session or 'other_user_id' not in session:
         return redirect(url_for('other_playlists'))
-    other_user_email, other_user_fullname = session['other_user_email'], session['other_user_fullname']
-    other_user_playlists = get_user_db_playlists(other_user_email)
+    other_user_id, other_user_fullname = session['other_user_id'], session['other_user_fullname']
+    other_user_playlists = get_user_db_playlists(other_user_id)
 
-    return render_template('other-user-playlists.html', other_user_email=other_user_email,
+    return render_template('other-user-playlists.html', other_user_id=other_user_id,
                            other_user_fullname=other_user_fullname, other_user_playlists=other_user_playlists)
 
 
@@ -152,4 +156,3 @@ def callback():
 if __name__ == '__main__':
     configure()     # load env
     app.run(debug=True)
-    print('hey')
