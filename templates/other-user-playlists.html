@@ -3,17 +3,18 @@
 {% block content %}
     {% if not other_user_playlists %}
           <div>
-            <p>{{ other_user_fullname }} has no playlists.</p>
+            <p class="text-center font-weight-bold m-1">{{ other_user_fullname }} has no playlists.</p>
         </div>
     {% else %}
-            <p>{{ other_user_fullname }} playlists: </p>
+            <p class="text-center font-weight-bold m-1">{{ other_user_fullname }} Playlists: </p>
 
-            <ul>
+            <ul class="list-group p-3">
             {% for playlist_id, playlist_name in other_user_playlists.items() %}
                 <div>
-                    <li class="p-1 m-1">
-                        <button id="{{ playlist_id }}" >{{ playlist_name }}</button>
-                    </li>
+<!--                    <li class="list-group-item list-group-item-primary p-1 m-1">-->
+<!--                        <button id="{{ playlist_id }}" class="list-group-item-action btn btn-outline-dark" >{{ playlist_name }}</button>-->
+<!--                    </li>-->
+                    <li class="list-group-item list-group-item-primary list-group-item-action p-1 m-1" id="{{ playlist_id }}"> {{ playlist_name }}</li>
                 </div>
             {% endfor %}
             </ul>

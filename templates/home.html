@@ -2,9 +2,9 @@
 {% block title %} Home Page {% endblock %}
 {% block content %}
 <div class="p-3">
-    <h1>Home Page</h1>
-    <p>Welcome, {{ session['full_name'] }}!</p>
-    <ul>
+    <h1 class="lead">Home Page</h1>
+    <p class="text-center font-weight-bold m-1">Welcome, {{ session['full_name'] }}!</p>
+    <ul class="list-group p-3">
         {% if not playlists %}
             <div>
                 <p>User has no playlists</p>
@@ -12,8 +12,8 @@
         {% else %}
             {% for playlist_id, playlist_name in playlists.items() %}
                 <div>
-                    <li>
-                        <button id="{{ playlist_id }}" >{{ playlist_name }}</button>
+                    <li class="list-group-item list-group-item-primary p-1 m-1">
+                        <button id="{{ playlist_id }}" class="list-group-item-action btn btn-outline-dark" >{{ playlist_name }}</button>
                     </li>
                 </div>
             {% endfor %}
@@ -37,7 +37,7 @@
         let list = document.createElement('ul')
         let btn = document.createElement('button')
         btn.innerHTML = 'Clear'
-        btn.classList.add('m-3')
+        btn.classList.add('list-group-item-action', 'btn', 'btn-light', 'p-1', 'm-1')
         btn.addEventListener('click', () => clearContainer(tracksContainer))
         clearContainer(tracksContainer)
 
