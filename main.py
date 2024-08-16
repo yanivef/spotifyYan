@@ -5,6 +5,7 @@ from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spo
 from functools import wraps
 import os
 import hashlib
+from datetime import datetime, timedelta,timezone
 
 
 app = Flask(__name__)
@@ -17,6 +18,15 @@ def login_req(func):
         if 'logged_in' not in session or 'email' not in session or 'full_name' not in session or 'user_id' not in session:
             flash('You need to be logged in', 'danger')
             return redirect(url_for('login'))
+        # check for token expiration
+        if 'access_token' in session and 'token_expires' in session:
+            token_expires = session['token_expires']
+            current_time = datetime.now().replace(tzinfo=timezone.utc)  # get current time, same timezone offset (UTC)
+
+            if current_time >= token_expires:
+                session.clear()                                     # clear session
+                flash('Login expired!', category='danger')
+                return redirect(url_for('login'))                   # user need to log in again, token expired
 
         # if sp_created is True, no need to create again
         if 'access_token' in session and 'sp_created' not in session:
@@ -90,13 +100,8 @@ def register():
             return render_template('register.html')
 
         else:
-            # USER DOESNT EXIST, SUBMIT HIM TO DB
+            # USER DOESNT EXIST, ADD HIM TO DB
             handle_user_submit(fname, lname, email, password)
-            # HANDLE SESSION FOR NEW USER -> AFTER REGISTER HE IS LOGGED IN
-            session['logged_in'] = True
-            session['email'] = email
-            session['full_name'] = f'{fname} {lname}'
-            session['user_id'] = get_user_id(email)
 
     return redirect(url_for('login'))
 
@@ -147,9 +152,11 @@ def other_user_pl():
 # spotify will send response to callback route -> base on the route set in the developer dashboard on spotify website
 @app.route('/callback')
 def callback():
-    code = request.args.get('code')             # get the code from the spotify response
-    access_token = get_access_token(code)       # convert code to access token
-    session['access_token'] = access_token      # store access token in session
+    code = request.args.get('code')                            # get the code from the spotify response
+    access_token, token_expires = get_access_token(code)       # convert code to access token, get token access, token expiration
+    session['access_token'] = access_token                     # store access token in session
+    expiration_time = datetime.now() + timedelta(seconds=token_expires)     # current time + the token expiration time = expiration time of the token
+    session['token_expires'] = expiration_time                 # store token expiration time in session
 
     return redirect(url_for('home'))
 
