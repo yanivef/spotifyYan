@@ -55,10 +55,9 @@ def get_access_token(code):
 
     response = requests.post(token_url, data=token_data, headers=headers)
     token_info = response.json()
-    token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
     token_access = token_info.get('access_token')
-
-    return token_access
+    token_expires = token_info.get('expires_in')
+    return token_access, token_expires
 
 
 def create_sp(token_access):
