@@ -2,43 +2,45 @@ import psycopg2 as ps
 import os
 from tools import configure
 
-configure()  # load env
 
-try:
-    conn = ps.connect(dbname=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'),
-                      password=os.getenv('DB_PASS'), port=os.getenv('DB_PORT'))
+def db_init():
+    configure()  # load env
 
-    cur = conn.cursor()
+    try:
+        conn = ps.connect(dbname=os.getenv('DB_NAME'), host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'),
+                          password=os.getenv('DB_PASS'), port=os.getenv('DB_PORT'))
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-                    user_id SERIAL PRIMARY KEY,
-                    email VARCHAR(255) UNIQUE NOT NULL,
-                    fname VARCHAR(255) NOT NULL,
-                    lname VARCHAR(255) NOT NULL,
-                    password VARCHAR(255) NOT NULL
-        );
-    """)
+        cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS playlists (
-                    playlist_id VARCHAR(255),
-                    user_id INT,
-                    playlist_name VARCHAR(255) NOT NULL,
-                    
-                    FOREIGN KEY (user_id) REFERENCES users(user_id),
-                    PRIMARY KEY (user_id, playlist_id)
-        );
-    """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                        user_id SERIAL PRIMARY KEY,
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        fname VARCHAR(255) NOT NULL,
+                        lname VARCHAR(255) NOT NULL,
+                        password VARCHAR(255) NOT NULL
+            );
+        """)
 
-    conn.commit()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS playlists (
+                        playlist_id VARCHAR(255),
+                        user_id INT,
+                        playlist_name VARCHAR(255) NOT NULL,
+                        
+                        FOREIGN KEY (user_id) REFERENCES users(user_id),
+                        PRIMARY KEY (user_id, playlist_id)
+            );
+        """)
 
-except Exception as e:
-    print(f'Connection to DB failed, error: {e}')
+        conn.commit()
 
-finally:
-    if cur:
-        cur.close()
+    except Exception as e:
+        print(f'Connection to DB failed, error: {e}')
 
-    if conn:
-        conn.close()
+    finally:
+        if cur:
+            cur.close()
+
+        if conn:
+            conn.close()

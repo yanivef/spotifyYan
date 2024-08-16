@@ -166,3 +166,4 @@ def get_other_users(user_id):
 
     except Exception as e:
         print(f'Cant fetch other users, error: {e}')
+        return None

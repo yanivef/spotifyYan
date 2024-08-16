@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from db import db_init
 from tools import (handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure,
                    update_user_playlists, get_other_users, get_user_db_playlists, get_user_id)
 from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spotify, get_access_token, create_sp
@@ -162,4 +163,5 @@ def callback():
 
 if __name__ == '__main__':
     configure()     # load env
+    db_init()
     app.run(debug=True)
