@@ -55,10 +55,9 @@ def get_access_token(code):
 
     response = requests.post(token_url, data=token_data, headers=headers)
     token_info = response.json()
-    token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
     token_access = token_info.get('access_token')
-
-    return token_access
+    token_expires = token_info.get('expires_in')
+    return token_access, token_expires
 
 
 def create_sp(token_access):
@@ -68,8 +67,7 @@ def create_sp(token_access):
 
 def get_playlists(sp):
     playlists = sp.current_user_playlists(limit=20)     # limit - 20, gets up to 20 playlists
-    # playlists['items'] = []       # check case for user without playlists
-    if not playlists['items']:      # if user has no playlists -> playlists['items'] is empty list
+    if not playlists.get('items'):  # if user has no playlists -> playlists['items'] is empty list
         return []
 
     playlists_dict = {}     # KEY -> playlist id,     VALUE -> playlist name

@@ -18,7 +18,7 @@
     <title>{% block title %}Home{% endblock %}</title>
     </head>
     <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-primary bg-dark">
       <button
         class="navbar-toggler"
         type="button"
@@ -33,7 +33,7 @@
           {% if session['logged_in'] %}
             <a class="nav-item nav-link" id="home" href="/home">Home</a>
             <a class="nav-item nav-link" id="other_playlists" href="/other-playlists">Other Playlists</a>
-            <a class="nav-item nav-link">{{ session['full_name'] }}</a>
+            <a class="nav-item nav-link disabled">{{ session['full_name'] }}</a>
             <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
 
           {% else %}

@@ -1,22 +1,24 @@
 {% extends "base.html" %}
 {% block title %} Other Playlists {% endblock %}
 {% block content %}
-    {% if not users_details %}
-        <div>
-            <p>There are currently no other users.</p>
-        </div>
-    {% else %}
-        <form action="{{ url_for('generate_other_pl') }}" method="post">
+    <div class="p-3">
+        {% if not users_details %}
+            <p class="text-center font-weight-bold m-1">There are currently no other users.</p>
+        {% else %}
+            <h1 class="lead">Other Users</h1>
 
-            <ul>
-            {% for user_email, user_fullname in users_details.items() %}
-                <div>
-                    <li class="p-1 m-1">
-                        <button id="{{ user_email }}" name="{{ user_email }}" value="{{ user_fullname }}" class="p-1" type="submit" >{{ user_fullname }}</button>
-                    </li>
-                </div>
-            {% endfor %}
-            </ul>
-        </form>
-    {% endif %}
+            <form action="{{ url_for('generate_other_pl') }}" method="post">
+
+                <ul class="list-group p-3">
+                {% for user_id, user_fullname in users_details.items() %}
+                    <div>
+                        <li class="list-group-item list-group-item-primary p-1 m-1">
+                            <button id="{{ user_id }}" name="{{ user_id }}" value="{{ user_fullname }}" class="list-group-item-action btn btn-outline-dark" type="submit" >{{ user_fullname }}</button>
+                        </li>
+                    </div>
+                {% endfor %}
+                </ul>
+            </form>
+        {% endif %}
+    </div>
 {% endblock %}
