@@ -66,6 +66,9 @@ def create_sp(token_access):
 
 
 def get_playlists(sp):
+    # if sp is None
+    if not sp:
+        return []
     playlists = sp.current_user_playlists(limit=20)     # limit - 20, gets up to 20 playlists
     if not playlists.get('items'):  # if user has no playlists -> playlists['items'] is empty list
         return []
@@ -76,20 +79,23 @@ def get_playlists(sp):
             playlists_dict[playlist['id']] = playlist['name']
     return playlists_dict
 
+#
+# def get_tracks_in_playlist(sp, playlist_id):
+#     tracks = sp.playlist_items(playlist_id)
+#     list_of_tracks = []
+#
+#     for track in tracks['items']:
+#         list_of_tracks.append(track['track']['name'])
+#
+#     return list_of_tracks
 
-def get_tracks_in_playlist(sp, playlist_id):
-    tracks = sp.playlist_items(playlist_id)
-    list_of_tracks = []
-    for track in tracks['items']:
-        list_of_tracks.append(track['track']['name'])
-    return list_of_tracks
-
-
-def tracks_in_playlists(sp):
-    playlists_dict = get_playlists(sp)
-    if not playlists_dict:      # the return value from get_playlists() was empty list
-        return
-    dict_of_tracks = {}     # KEY -> playlist id,   VALUE -> playlist tracks (as list)
-    for playlist_id in playlists_dict.keys():
-        dict_of_tracks[playlist_id] = get_tracks_in_playlist(sp, playlist_id)
-    return dict_of_tracks
+#
+# def tracks_in_playlists(sp):
+#     playlists_dict = get_playlists(sp)
+#     if not playlists_dict:      # the return value from get_playlists() was empty list
+#         return
+#     dict_of_tracks = {}     # KEY -> playlist id,   VALUE -> playlist tracks (as list)
+#
+#     for playlist_id in playlists_dict.keys():
+#         dict_of_tracks[playlist_id] = get_tracks_in_playlist(sp, playlist_id)
+#     return dict_of_tracks

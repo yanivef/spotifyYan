@@ -33,6 +33,19 @@ def db_init():
             );
         """)
 
+        cur.execute("""
+                    CREATE TABLE IF NOT EXISTS tracks (
+                        track_id VARCHAR(255) NOT NULL,
+                        playlist_id VARCHAR(255) NOT NULL,
+                        user_id INT NOT NULL,
+                        track_name VARCHAR(255) NOT NULL,
+                        
+                        PRIMARY KEY (track_id, playlist_id, user_id),
+                        FOREIGN KEY (user_id, playlist_id) REFERENCES playlists(user_id, playlist_id) ON DELETE CASCADE
+                    );
+
+                """)
+
         conn.commit()
 
     except Exception as e:

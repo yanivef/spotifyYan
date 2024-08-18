@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from db import db_init
 from tools import (handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure,
-                   update_user_playlists, get_other_users, get_user_db_playlists, get_user_id)
-from spotify import get_playlists, tracks_in_playlists, generate_redirect_to_spotify, get_access_token, create_sp
+                   update_user_playlists, get_other_users, get_user_db_playlists, get_user_id, is_valid_registration,
+                   check_playlists_difference, get_tracks_from_db_in_pl)
+from spotify import get_playlists, generate_redirect_to_spotify, get_access_token, create_sp
 from functools import wraps
 import os
 import hashlib
@@ -11,6 +12,28 @@ from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
+
+
+def generate_tracks(func):
+    @wraps(func)
+    def dec_func(*args, **kwargs):
+        if 'access_token' in session and 'first_login' not in session:
+            access_token = session['access_token']
+            sp = create_sp(access_token)          # creates spotify obj for user base on his access token
+            user_id = session['user_id']
+            playlists = get_playlists(sp)         # current actual playlists
+            update_user_playlists(sp, playlists, user_id)  # update DB playlists
+            session['first_login'] = True
+
+
+            # g.tracks = get_tracks_from_db_in_pl(user_id)        # store tracks from DB every home request
+
+            # if check_playlists_difference(user_id, playlists):
+            #     update_user_playlists(sp, playlists, user_id)  # update DB playlists
+            #     g.tracks = get_tracks_from_db_in_pl(user_id)
+
+        return func(*args, **kwargs)
+    return dec_func
 
 
 def login_req(func):
@@ -29,19 +52,6 @@ def login_req(func):
                 flash('Login expired!', category='danger')
                 return redirect(url_for('login'))                   # user need to log in again, token expired
 
-        # if sp_created is True, no need to create again
-        if 'access_token' in session and 'sp_created' not in session:
-            access_token = session['access_token']
-            sp = create_sp(access_token)        # creates spotify obj for user base on his access token
-            session['sp_created'] = True        # stores in session True if sp obj created
-
-            # update user's playlists on every login
-            user_id = session['user_id']
-            playlists = get_playlists(sp)                   # current updated playlists
-            update_user_playlists(playlists, user_id)    # update DB playlists
-
-            if 'tracks' not in session:
-                session['tracks'] = tracks_in_playlists(sp)
         return func(*args, **kwargs)
     return dec_func
 
@@ -54,11 +64,11 @@ def index():
 
 @app.route('/home')
 @login_req
+@generate_tracks
 def home():
-    access_token = session['access_token']
-    sp = create_sp(access_token)
-    tracks = [session['tracks']]
-    playlists = get_playlists(sp)
+    user_id = session['user_id']
+    tracks = [get_tracks_from_db_in_pl(user_id)]        # need to wrap in list because we are passing a json obj
+    playlists = get_user_db_playlists(user_id)
     return render_template('home.html', playlists=playlists, tracks=tracks)
 
 
@@ -89,22 +99,27 @@ def login():
 def register():
     if request.method == 'GET':
         return render_template('register.html')
+
     fname = request.form.get('fname-reg')
     lname = request.form.get('lname-reg')
     password = request.form.get('password-reg')
     password = hashlib.sha256(password.encode()).hexdigest()    # hash the password
     email = request.form.get('email-reg')
-    if request.method == 'POST' and fname and lname and password and email:
-        is_exist = handle_user_exists(email)        # check if user already exists
-        if is_exist:
-            flash('Email is already taken!', 'danger')
-            return render_template('register.html')
 
-        else:
-            # USER DOESNT EXIST, ADD HIM TO DB
-            handle_user_submit(fname, lname, email, password)
+    if is_valid_registration(fname, lname, email, password):
+        if request.method == 'POST' and fname and lname and password and email:
+            is_exist = handle_user_exists(email)        # check if user already exists
+            if is_exist:
+                flash('Email is already taken!', 'danger')
+                return render_template('register.html')
 
-    return redirect(url_for('login'))
+            else:
+                # USER DOESNT EXIST, ADD HIM TO DB
+                handle_user_submit(fname, lname, email, password)
+                return redirect(url_for('login'))
+
+    flash('Please make sure all fields are filled', 'danger')
+    return render_template('register.html')
 
 
 @app.route('/logout')
@@ -145,9 +160,25 @@ def other_user_pl():
         return redirect(url_for('other_playlists'))
     other_user_id, other_user_fullname = session['other_user_id'], session['other_user_fullname']
     other_user_playlists = get_user_db_playlists(other_user_id)
+    base_url = 'https://open.spotify.com/playlist/'     # need to concat playlist id
 
     return render_template('other-user-playlists.html', other_user_id=other_user_id,
-                           other_user_fullname=other_user_fullname, other_user_playlists=other_user_playlists)
+                           other_user_fullname=other_user_fullname, other_user_playlists=other_user_playlists,
+                           base_url=base_url)
+
+
+# sync connected user playlists and tracks
+@app.route('/sync-playlists', methods=['POST'])
+@login_req
+def sync_playlists():
+    if 'access_token' in session:
+        access_token = session['access_token']
+        sp = create_sp(access_token)  # creates spotify obj for user base on his access token
+        user_id = session['user_id']
+        playlists = get_playlists(sp)  # current actual playlists
+
+        update_user_playlists(sp, playlists, user_id)
+        return redirect(url_for('home'))
 
 
 # spotify will send response to callback route -> base on the route set in the developer dashboard on spotify website
