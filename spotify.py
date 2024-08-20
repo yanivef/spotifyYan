@@ -1,19 +1,9 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import os
-from tools import configure
+from consts import *
 import requests
 import urllib.parse
 import base64
-
-
-configure()  # load env
-
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-CLIENT_ID = os.getenv('CLIENT_ID')
-REDIRECT_URI = os.getenv('REDIRECT_URI')
-SCOPE = os.getenv('SCOPE')
-
 
 # init SpotifyOAuth with spotify developer credentials
 sp_oauth = SpotifyOAuth(client_id=CLIENT_ID,
@@ -78,24 +68,3 @@ def get_playlists(sp):
         if playlist['id'] not in playlists_dict:
             playlists_dict[playlist['id']] = playlist['name']
     return playlists_dict
-
-#
-# def get_tracks_in_playlist(sp, playlist_id):
-#     tracks = sp.playlist_items(playlist_id)
-#     list_of_tracks = []
-#
-#     for track in tracks['items']:
-#         list_of_tracks.append(track['track']['name'])
-#
-#     return list_of_tracks
-
-#
-# def tracks_in_playlists(sp):
-#     playlists_dict = get_playlists(sp)
-#     if not playlists_dict:      # the return value from get_playlists() was empty list
-#         return
-#     dict_of_tracks = {}     # KEY -> playlist id,   VALUE -> playlist tracks (as list)
-#
-#     for playlist_id in playlists_dict.keys():
-#         dict_of_tracks[playlist_id] = get_tracks_in_playlist(sp, playlist_id)
-#     return dict_of_tracks
