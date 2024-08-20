@@ -99,6 +99,7 @@ def get_user_id(email):
     except Exception as e:
         print(f'Cannot fetch user id, error: {e}')
 
+
 # get current tracks in playlist (from spotify), returns dict of KEY-> track id,       VALUE-> track name
 def get_tracks_in_playlist_new(sp, playlist_id):
     details = sp.playlist_tracks(playlist_id)
@@ -213,21 +214,22 @@ def get_other_users(user_id):
 
 
 # returns True if there is difference between PL in DB and PL in spotify, otherwise False
-def check_playlists_difference(user_id, playlists):
-    current_pl_db = get_user_db_playlists(user_id)            # get user playlists from DB
-    if current_pl_db and playlists:
-        current_pl_db_list = {*current_pl_db.keys()}          # make a set of playlists id from DB
-        current_pl_spotify = {*playlists.keys()}              # make a set of updated playlists id
-        diff = (current_pl_db_list != current_pl_spotify)     # check if there is a difference between DB and SPOTIFY
+# def check_playlists_difference(user_id, playlists):
+#     current_pl_db = get_user_db_playlists(user_id)            # get user playlists from DB
+#     if current_pl_db and playlists:
+#         current_pl_db_list = {*current_pl_db.keys()}          # make a set of playlists id from DB
+#         current_pl_spotify = {*playlists.keys()}              # make a set of updated playlists id
+#         diff = (current_pl_db_list != current_pl_spotify)     # check if there is a difference between DB and SPOTIFY
+#
+#         if diff:
+#             return True
+#
+#     # in case one of them is empty
+#     elif playlists or current_pl_db:
+#         return True
+#
+#     return False
 
-        if diff:
-            return True
-
-    # in case one of them is empty
-    elif playlists or current_pl_db:
-        return True
-
-    return False
 
 # get user tracks and return as dict: KEY-> playlist_id     VALUE-> [track_name], track names as list
 def get_tracks_from_db_in_pl(user_id):
