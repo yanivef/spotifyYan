@@ -1,32 +1,27 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-
-import consts
+from tools import *
+from consts import *
 from db import db_init
-from tools import (handle_login, handle_user_exists, handle_user_submit, get_user_full_name, configure,
-                   update_user_playlists, get_other_users, get_user_db_playlists, get_user_id, is_valid_registration,
-                   get_tracks_from_db_in_pl)
 from spotify import get_playlists, generate_redirect_to_spotify, get_access_token, create_sp
 from functools import wraps
 import os
 import hashlib
 from datetime import datetime, timedelta, timezone
-from consts import *
-
 
 app = Flask(__name__)
-app.secret_key = os.getenv(consts.SECRET_KEY)
+app.secret_key = os.getenv(SECRET_KEY)
 
 
 def generate_tracks(func):
     @wraps(func)
     def dec_func(*args, **kwargs):
-        if consts.ACCESS_TOKEN in session and consts.FIRST_LOGIN not in session:
-            access_token = session[consts.ACCESS_TOKEN]
+        if ACCESS_TOKEN in session and FIRST_LOGIN not in session:
+            access_token = session[ACCESS_TOKEN]
             sp = create_sp(access_token)          # creates spotify obj for user base on his access token
-            user_id = session[consts.USER_ID]
+            user_id = session[USER_ID]
             playlists = get_playlists(sp)         # current actual playlists
             update_user_playlists(sp, playlists, user_id)  # update DB playlists
-            session[consts.FIRST_LOGIN] = True
+            session[FIRST_LOGIN] = True
 
         return func(*args, **kwargs)
     return dec_func
@@ -189,6 +184,5 @@ def callback():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
-    configure()     # load env
     db_init()
     app.run(debug=True)
